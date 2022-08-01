@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+    Dragonite
+
+Globals:
+    Function:
+        Timeout: 900
+        MemorySize: 128
+
+
+Parameters:
+  EnvStageName:
+    Type: String
+    Default: dev
+    Description: The Environment name (e.g. dev, prod, etc.)
+  Region:
+    Type: String
+    Default: us-west-2
+    Description: The region to deploy the code to
+  CoreCommonResourcesStack:
+    Type: String
+    Default: core-common-resources
+    Description: The name of the core common stack that contains the resources required for reuse
+  LambdaRoleName:
+    Type: String
+    Default: CoreLambdaRole
+    Description: The default role name given to apply to the functions
+  DefaultSecurityGroupsName:
+    Type: String
+    Default: AppSecurityGroups
+    Description: The logical name of the security groups that will be given to the resources
+  DefaultSubnetsName:
+    Type: String
+    Default: AppSubnets
+    Description: The logical name of the subnets that will be given to the resources
+  DragoniteS3BucketName:
+    Type: String
+    Default: dragonite-messages
+    Description: This is the bucket were we store Dragonite's messages    
+    
+
+Resources:
+  ####################
+  #         S3       #
+  ####################
+
+  DragoniteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketName:
+        Fn::Join:
+        - "-"
+        - - Ref: EnvStageName
+          - Ref: DragoniteS3BucketName
+
+  ####################
+  #     Lambdas      #
+  ####################
+  
+  CreateFileFromTableauFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Zip
+      CodeUri: create-file-from-tableau/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-CreateFileFromTableau-${EnvStageName}
+      Role:
+        Fn::ImportValue:
+          Fn::Join:
+            - '-'
+            - - Ref: CoreCommonResourcesStack
+              - Ref: LambdaRoleName
+              - Ref: EnvStageName
+              - Arn
+      VpcConfig:
+        SecurityGroupIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSecurityGroupsName
+                    - Ref: EnvStageName
+        SubnetIds:
+          Fn::Split:
+            - ','
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSubnetsName
+                    - Ref: EnvStageName
+      Environment:
+        Variables:
+          TABLEAU_SECRET_NAME: tableau-secret
+
+  GetPresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Zip
+      CodeUri: get-presigned-url/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-GetPresignedUrl-${EnvStageName}
+      Role:
+        Fn::ImportValue:
+          Fn::Join:
+            - '-'
+            - - Ref: CoreCommonResourcesStack
+              - Ref: LambdaRoleName
+              - Ref: EnvStageName
+              - Arn
+      VpcConfig:
+        SecurityGroupIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSecurityGroupsName
+                    - Ref: EnvStageName
+        SubnetIds:
+          Fn::Split:
+            - ','
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSubnetsName
+                    - Ref: EnvStageName
+   
+  SendMailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Zip
+      CodeUri: send-mail/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-SendMail-${EnvStageName}
+      Role:
+        Fn::ImportValue:
+          Fn::Join:
+            - '-'
+            - - Ref: CoreCommonResourcesStack
+              - Ref: LambdaRoleName
+              - Ref: EnvStageName
+              - Arn
+      VpcConfig:
+        SecurityGroupIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSecurityGroupsName
+                    - Ref: EnvStageName
+        SubnetIds:
+          Fn::Split:
+            - ','
+            - Fn::ImportValue:
+                Fn::Join:
+                  - '-'
+                  - - Ref: CoreCommonResourcesStack
+                    - Ref: DefaultSubnetsName
+                    - Ref: EnvStageName
+  
