@@ -1,2 +1,2 @@
-# dragonite
-Dragonite made an appearance in Pokémon: The First Movie as Mewtwo’s “postman” as it uses Dragonite to send the invitations out.
+# Project Dragonite
+Dragonite made an appearance in Pokémon: The First Movie as Mewtwo’s “postman” as it uses Dragonite to send the invitations out. This project uses Tableau's API from python to take a screenshot of a given dashboards passing filters as url parameters, uploads them to S3 and sends them via email using SES. Saving a lot of money in Tableau's licences :) . I made this project for a company I worked on, and all microservices had pokemon names, so I picked Dragonite as our postman as Mewtwo did before.
